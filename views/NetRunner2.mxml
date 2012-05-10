@@ -1,0 +1,560 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="onCreationComplete();">
+
+	<mx:Script>
+        <![CDATA[
+        	// Imports 
+        	import mx.controls.Text;
+            import mx.events.DragEvent;
+            import mx.containers.Box;
+            import mx.containers.Canvas;
+            import mx.managers.DragManager;
+            import mx.core.DragSource;
+            import flash.events.MouseEvent;
+            import com.BlueToken;
+            import com.Card;
+            import com.Deck;
+            import mx.controls.Alert;
+            import mx.core.BitmapAsset;
+            import mx.core.UIComponent;
+            
+            // Embed images, note that some cannot be embedded, they are hard set at the bottom, in the mxml
+            [Embed("/images/bit.png")]
+            [Bindable]
+            public var OneBit:Class;
+            
+            [Embed("/images/5bit.png")]
+            [Bindable]
+            public var FiveBit:Class;
+                          
+            [Embed("/images/runner_back.jpg")]
+            [Bindable]
+            public var RunnerCardBack:Class;
+            
+            [Embed("/images/corp_back.jpg")]
+            [Bindable]
+            public var CorpCardBack:Class;
+            
+            [Bindable]
+            private var totalBits:uint;
+           	
+           	[Embed(source='/images/bg.gif')]
+        	public var bg:Class;
+           
+           	public var scale:Number = 1; // the size of the application
+     
+          
+           	// Offset for tokens
+           	public var xOff:Number;
+           	public var yOff:Number;
+         	
+           	// Offset for cards
+   	    	public var cardXOff:Number;
+   	    	public var cardYOff:Number;
+         	
+         	[Bindable]
+         	public var runnerCardsLeft:Number;
+         	[Bindable]
+         	public var corpCardsLeft:Number;
+         	
+         	internal static var debugMode:Boolean = true;
+         	// Debug stuff
+         	[Bindable]
+         	public var debugText:String;
+         	[Bindable]
+         	public var debugLines:Number = 0;
+         	
+         	public var myCorpDeck:Deck = new Deck("Corp");
+         	public var myRunnerDeck:Deck = new Deck("Runner");
+         	
+         	[Bindable]
+         	public var myHandDeck:Deck = new Deck("Hand");
+			public var currentCard:Card = new Card;
+			
+			public function doDebug(text:String):void {
+				
+				if(debugMode == true){
+				
+				debugText = debugText + "\n" + text;
+				debugLines++;
+				}
+			}
+	
+			public function onCreationComplete():void {				
+	  
+	            var s:Shape = new Shape();
+	            var u:UIComponent = new UIComponent();
+	            u.addChild( s );
+	            this.addChildAt(u, 0);            
+	            
+	            var bd:BitmapData = new bg().bitmapData;
+	            s.graphics.beginBitmapFill( bd, null, true );
+	            s.graphics.drawRect(0,0, 3500, 3500); // huge
+	            s.graphics.endFill(); 
+	            
+	    		doDebug("Initializing Decks");
+				doDebug("Initiating Corp Deck");
+				myCorpDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "corp"));
+				myCorpDeck.addCard(new Card("Clown", "Program", "images/clown.jpg", "corp"));
+				myCorpDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "corp"));
+				myCorpDeck.addCard(new Card("Clown", "Program", "images/clown.jpg", "corp"));
+				myCorpDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "corp"));
+				myCorpDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "corp"));
+			//	trace (myCorpDeck);
+				doDebug("Shuffling Corp Deck");
+				myCorpDeck.shuffle();
+				doDebug("Done Shuffling Corp Deck");
+			//	trace (myCorpDeck);
+	
+				doDebug("Initializing Runner Deck");
+				myRunnerDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "runner"));
+				myRunnerDeck.addCard(new Card("Clown", "Program", "images/clown.jpg", "runner"));
+				myRunnerDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "runner"));
+				myRunnerDeck.addCard(new Card("Clown", "Program", "images/clown.jpg", "runner"));
+				myRunnerDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "runner"));
+				myRunnerDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "runner"));
+			//	trace (myRunnerDeck);
+				doDebug("Shuffling Runner Deck");
+				myRunnerDeck.shuffle();
+				doDebug("Done Shuffling Runner Deck");
+			//	trace (myRunnerDeck);
+				
+				doDebug("Counting cards in each Deck");
+				corpCardsLeft = myCorpDeck.deck.length;
+				runnerCardsLeft = myRunnerDeck.deck.length;
+			//	currentCard = myDeck.draw();
+			//	trace (myDeck);
+			//	myDeck.putOnTop(new Card("Piledriver", "Program"));
+			//	trace (myDeck);
+			
+				// Add the event listener to the hand buttons
+				faceUpButton.addEventListener(MouseEvent.CLICK, handFaceUp);
+				faceDownButton.addEventListener(MouseEvent.CLICK, handFaceDown);
+				fanButton.addEventListener(MouseEvent.CLICK, doFan);
+			}	
+         	
+         	// This does the fanning of the cards that are in your hand.
+         	public function doFan(event:MouseEvent):void {
+				doDebug("Now fanning out the cards");
+				var angleStepper:Number = 90/myHandDeck.deck.length;
+				var angle:Number = -90;
+				
+							
+				for each (var card:Card in myHandDeck.deck) {
+					
+					card.x = 300;
+					card.y = 180;
+					card.fanCards(event, angle);
+					
+					angle = angle + angleStepper;
+				}
+				
+			}
+			
+			// THis shuffles your hand (No animation for this yet)
+			public function shuffleHand():void {
+				if(myHandDeck.deck.length != 0) {
+					doDebug("Now randomzing your hand");
+					myHandDeck.shuffle();
+				}
+			}
+			
+			// this flips over all the cards in your hand.
+			public function handFaceUp(event:MouseEvent):void {
+				if(myHandDeck.deck.length != 0) {
+					doDebug("Now flipping all the cards up");
+					for each (var card:Card in myHandDeck.deck) {
+						if(card.cardState == "faceUp") {} else {
+						card.flipCard(event);
+						}
+					}
+					
+				}
+			}
+			
+			// this flips over all the cards in your hand
+			public function handFaceDown(event:MouseEvent):void {
+				if(myHandDeck.deck.length != 0) {
+					doDebug("Now flipping the cards over");
+					for each (var card:Card in myHandDeck.deck) {
+						if(card.cardState == "faceDown") {} else {
+						card.flipCard(event);
+						}
+					}
+					
+				}
+				
+			}
+      
+      		// This needs to be rewritten since we moved to a view stack   	
+         	// Scales the application
+         	public function scaleApp():void {
+         		doDebug("Scaling the Application");
+     //    		application.scaleX = scale * scaleVar.value;
+       //  		application.scaleY = scale * scaleVar.value;
+         	}
+            
+            // This is the offset for the tokens.
+           	public function offSet(event:MouseEvent):void {
+           	//	doDebug("Triggered Token Offset");
+           		xOff = event.localX;
+           		yOff = event.localY;
+           	}                     
+       
+       		// this is the offset for the cards.
+           	public function cardOffSet(event:MouseEvent):void {
+           	//	doDebug("Triggered Card Offset");
+           		
+           		cardXOff = event.localX;
+           		cardYOff = event.localY;
+           	}                     
+            
+            // This makes a corp card and puts it on the playfield                    
+            public function makeCorpCard():void {
+            	
+            	var myCard:Card = currentCard = myCorpDeck.draw();
+            	myCard.addEventListener(MouseEvent.MOUSE_MOVE, cardOffSet);
+            	corpCardsLeft = myCorpDeck.deck.length;
+              	base.addChild(myCard);
+              	doDebug("Drawing Corp Card");
+              	if(corpCardsLeft == 0) { corpButton.enabled = false }
+            }
+           
+           	// this makes a runner card and puts it on the playfield
+            public function makeRunnerCard():void {
+            	
+            	var myCard:Card = currentCard = myRunnerDeck.draw();
+            	myCard.addEventListener(MouseEvent.MOUSE_MOVE, cardOffSet);
+           	    runnerCardsLeft = myRunnerDeck.deck.length;
+               	base.addChild(myCard);
+               	doDebug("Drawing Runner Card");
+               	if(runnerCardsLeft == 0) { runnerButton.enabled = false; }
+            } 
+ 			
+ 			// This makes a token and puts it on the playfield
+            public function makeToken():void {
+            	
+            	var myToken:BlueToken = new BlueToken("", "images/5bit.png", "token");
+            //	myToken.id = "token"+tokenID;
+             	myToken.addEventListener(MouseEvent.MOUSE_MOVE, offSet);	
+				base.addChild(myToken);
+            //	tokenID++;
+            	
+            	doDebug("Generating a Token");
+            }
+            
+/* Start of the token drag and drop functions */
+			
+			
+			// Look over this function it seems to get called alot for some reason
+            // Function called by the image dragEnter event; enables dropping
+  			private function baseDoDragEnter(event:DragEvent):void 
+            {
+            	if(event.dragSource.dataForFormat('format') == "bit") {
+            			doDebug("Cannot drop Bit here");
+            		 } else if (event.dragSource.hasFormat('cardType')) {
+            		 	DragManager.acceptDragDrop(Canvas(event.target));
+            		// 	Alert.show("Hit the card Type");
+            		 } else {
+            		 	// Tokens fall here
+               			DragManager.acceptDragDrop(Canvas(event.target));
+                //		doDebug("Bit Dropped");
+         		    }
+            } 
+            
+            private function baseDoDragDrop(event:DragEvent):void 
+            {	
+            	 if (event.dragSource.hasFormat('cardType')) {
+            	 	
+            	 	var tempCard:Card = event.dragInitiator as Card;
+					if (tempCard.inHand == true) {
+					//	Alert.show("Test2");
+						hand.removeChild(event.dragInitiator as DisplayObject);
+						base.addChild(tempCard);
+					    tempCard.inHand = false;
+					    myHandDeck.removeCard(tempCard);
+     				} 
+     				
+            	 	event.dragInitiator.x = event.currentTarget.mouseX - cardXOff;
+					event.dragInitiator.y = event.currentTarget.mouseY - cardYOff;
+					base.setChildIndex(Card(event.dragInitiator), base.numChildren-1);
+     				
+            	} else {
+       		    	event.dragInitiator.x = event.currentTarget.mouseX - xOff;
+					event.dragInitiator.y = event.currentTarget.mouseY - yOff;
+					base.setChildIndex(BlueToken(event.dragInitiator), base.numChildren-1);
+		     	}
+			}
+            
+            
+            private function handDoDragEnter(event:DragEvent):void 
+            {
+            	if(event.dragSource.dataForFormat('format') == "bit") {
+            			doDebug("Cannot drop Bit here");
+            		 } else if (event.dragSource.hasFormat('cardType')) {
+            		 	
+            		 	doDebug("trying to place card in hand");
+            		 	DragManager.acceptDragDrop(Canvas(event.currentTarget));
+            	
+            		 } else {
+            		 	doDebug("cannot drop Tokens here");
+            	
+         		    }
+            }
+            
+            private function handDoDragDrop(event:DragEvent):void 
+            {	
+            	 doDebug('handDoDragDrop triggered');
+            	 if (event.dragSource.hasFormat('cardType')) {
+          		  	doDebug("Is this even triggering");
+   					var tempCard:Card = event.dragInitiator as Card;
+					if (tempCard.inHand == false) {
+					
+						base.removeChild(event.dragInitiator as DisplayObject);
+						hand.addChild(tempCard);
+					    tempCard.inHand = true;
+					    myHandDeck.addCard(tempCard);
+					}
+				
+					event.dragInitiator.x = event.currentTarget.mouseX - cardXOff;
+					event.dragInitiator.y = event.currentTarget.mouseY - cardYOff;	
+					hand.setChildIndex(Card(event.dragInitiator), hand.numChildren-1);
+		     	}
+			}
+
+   
+/* Start of the token removal process */
+			public function removeTokenDragEnter(event:DragEvent):void {
+				doDebug("Entered the Drop Box");	
+				var dropTarget:Panel=event.currentTarget as Panel;
+				if (event.dragSource.formats[0] == "token") {
+					DragManager.acceptDragDrop(dropTarget);
+				}
+         	}
+			
+			public function removeTokenDragExit(event:MouseEvent):void {
+				doDebug("Exiting the Drop Box");
+				var dropTarget:Panel=event.currentTarget as Panel;                
+                revertBoxBorder();  
+			}
+
+			public function removeTokenDragDrop(event:DragEvent):void {
+					doDebug("Now removing Token");
+				
+					if (event.dragSource.formats[0] == "token") {
+						 base.removeChild(event.dragInitiator as DisplayObject);
+					}
+			}
+
+		    
+ 			
+/* Start of the drag and drop functions for the Cards */
+	/*	   
+            public function cardDragEnterHandler(event:DragEvent):void 
+            {
+            	// Get the drop target component from the event object.
+          	  	var dropTarget:Canvas=Canvas(event.currentTarget);
+
+				// Accept the drag only if the user is dragging data 
+       		    // identified by the 'cardType' format value.
+       		    if (event.dragSource.hasFormat('cardType')) {
+                DragManager.acceptDragDrop(dropTarget);
+            	}
+                   
+            }
+            
+            public function cardDragExitHandler(event:DragEvent):void
+            {
+
+                // Get the drop target component from the event object.
+                var dropTarget:Card=event.currentTarget as Card;                
+                             
+            }   
+        
+            public function cardDragDropHandler(event:DragEvent, dropID:int):void 
+            {
+            	var data:Object = event.dragSource.dataForFormat('cardType');
+            	// This is where I want to put the stuff to drag a card to your hand.
+            	// Set the canvas Image.
+            	if(dropID == 1) {           	
+         //  			myCanvas.setStyle("backgroundImage", data);
+           			doDebug("Card placed in slot 1");
+           		} else if (dropID == 2) {
+    //  	    	 	myCanvas2.setStyle("backgroundImage", data);
+      	    	 	doDebug("Card placed in slot 2");
+      	     	} else if (dropID == 3) {
+     // 	     		myCanvas3.setStyle("backgroundImage", data);
+      	     		doDebug("Card placed in slot 3");
+      	     	} else if (dropID == 4) {
+     // 	     		myCanvas4.setStyle("backgroundImage", data);
+      	     		doDebug("Card placed in slot 4");
+      	     	}
+      	     	
+            }
+   */         
+   
+/* Start of the bit dragging functions   */
+			
+            private function bitDragIt(event:MouseEvent, value:int, format:String):void 
+            {
+				
+                // Get the drag initiator component from the event object.
+                var dragInitiator:Image = event.currentTarget as Image;
+    
+                // Create a DragSource object.
+                var dragSource:DragSource = new DragSource();
+    
+                // Add the data to the object.
+			    dragSource.addData(value, 'value');
+      			dragSource.addData(format, 'format');
+                // Create a copy of the image to use as a drag proxy.
+                var dragProxy:Image = new Image();
+                dragProxy.source = event.currentTarget.source;
+    
+                // Call the DragManager doDrag() method to start the drag. 
+				
+                DragManager.doDrag(dragInitiator, dragSource, event, dragProxy);
+            }
+			
+			// Called if the user drags a drag proxy onto the drop target.
+            private function bitDragEnterHandler(event:DragEvent):void 
+            {
+				doDebug("Entering the Box");
+                // Get the drop target component from the event object.
+                var dropTarget:Box=event.currentTarget as Box;
+    
+                // Accept the drag only if the user is dragging data 
+                // identified by the 'value' format value.
+
+                if (event.dragSource.hasFormat('value')) 
+                {
+                    // Make the border of the Box thicker to 
+                    // visually signal to the user that they can 
+                    // drop the bits there.
+
+                    dropTarget.setStyle("borderThickness", 5);
+                    
+                    // Accept the drop.
+                    DragManager.acceptDragDrop(dropTarget);
+                }
+                   
+            }
+        
+            // Called if the user drags the drag proxy away from the drop target.
+            private function bitDragExitHandler(event:DragEvent):void
+            {
+				doDebug("Exiting the Box");
+                // Get the drop target component from the event object.
+                var dropTarget:Box=event.currentTarget as Box;                
+                
+                // Set the border of the Box to its default value
+                // to visually indicate that the user is no longer 
+                // over the drop target.
+
+                revertBoxBorder();   
+                             
+            }                    
+            // Called if the target accepts the dragged object and the user 
+            // releases the mouse button while over the drop target. 
+            private function bitDragDropHandler(event:DragEvent):void 
+            {
+				doDebug("Calculating Bits");
+                // Get the data identified by the 'value' format from the drag source.
+                var value:int = event.dragSource.dataForFormat('value') as int;
+
+                // Add the value to the total 
+
+                totalBits += value;
+                
+                // Set the border of the Box to its default value
+                revertBoxBorder();                
+            }
+            
+            // Helper function to revert the Box's border to a 1 pixel outline.
+            private function revertBoxBorder():void
+            {
+            	doDebug("Reverting Box Border");
+                amountDisplay.setStyle("borderThickness", 1);                
+            }
+        ]]>
+    </mx:Script>
+    
+
+<mx:Canvas id="base" 
+        width="800" height="334"  
+        dragEnter="baseDoDragEnter(event);" 
+        dragDrop="baseDoDragDrop(event); " borderStyle="none" cornerRadius="0">
+	
+</mx:Canvas>
+    
+    <mx:ApplicationControlBar x="-1" y="798" label="BitActions" enabled="true" toolTip="These are your available bit actions" borderColor="#767676" borderThickness="3" borderSides="2" barColor="#FF5AA2" width="800" dock="false">  
+ 
+    <mx:Box 
+        id="amountDisplay"
+        borderStyle="solid" borderColor="#000000" backgroundColor="#FFFFFF"
+        width="228" height="40" horizontalAlign="center" verticalAlign="middle"
+        dragEnter="bitDragEnterHandler(event);"
+        dragExit="bitDragExitHandler(event);"
+        dragDrop="bitDragDropHandler(event);"
+		y="508" x="281.5">
+ <mx:Label text="BitPool: {totalBits + ' credits'}" fontSize="14" x="253.5" y="508"/>
+    </mx:Box> 
+    
+    <mx:Image
+        id="oneBit" source="{OneBit}" 
+        mouseMove="if(toggle.selectedValue == 1) { bitDragIt(event, -1, 'bit'); } else { bitDragIt(event, 1, 'bit'); }" x="206" y="508"/>
+    <mx:Label text="1" fontSize="12"/>
+    <mx:Image 
+        id="fiveBit" source="{FiveBit}"
+        mouseMove="if(toggle.selectedValue == 1) { bitDragIt(event, -5, 'bit'); } else { bitDragIt(event, 5, 'bit'); }" x="246" y="508"/>
+    <mx:Label text="5" fontSize="12"/>
+ 
+    <mx:RadioButtonGroup id="toggle"/>
+    <mx:RadioButton x="118.0" y="510.0" label="Add" groupName="toggle" selected="true" value="0"/>
+    <mx:RadioButton x="118.0" y="534.0" label="Remove" groupName="toggle" value="1"/>
+    <mx:Text x="517" y="509" text="Drag Bits into the Box to alter your total." height="39" width="135"/>
+    <mx:HSlider minimum="0.1" maximum="2" snapInterval=".1" change="scaleApp();" id="scaleVar" enabled="true" allowTrackClick="true" value="1" toolTip="The scale of your application" width="78"/>
+    <mx:Text text="Scale"/>
+ 
+    </mx:ApplicationControlBar>
+    <mx:Panel width="799" height="448" layout="horizontal" label="Play Area" toolTip="These are the cards in your HQ (Hand)" title="You currently have {myHandDeck.deck.length} cards in your HQ" x="0" y="342">
+    	<mx:Canvas id="hand" height="424" width="100%" dragEnter="handDoDragEnter(event);" dragDrop="handDoDragDrop(event);">
+    		
+    	</mx:Canvas>
+    
+       <!-- <mx:Canvas id="myCanvas" backgroundColor="#FFFFFF" borderStyle="solid" backgroundImage=""
+            width="175" height="245" 
+            dragEnter="cardDragEnterHandler(event);" dragDrop="cardDragDropHandler(event, 1);" dragExit="cardDragExitHandler(event);" label="Deck">
+            </mx:Canvas>
+            <mx:Canvas id="myCanvas2" backgroundColor="#FFFFFF" borderStyle="solid" backgroundImage=""
+            width="175" height="245" 
+            dragEnter="cardDragEnterHandler(event);" dragDrop="cardDragDropHandler(event, 2);" dragExit="cardDragExitHandler(event);" label="Deck">
+            </mx:Canvas>
+        <mx:Canvas id="myCanvas3" backgroundColor="#FFFFFF" borderStyle="solid" backgroundImage=""
+        width="175" height="245" 
+        dragEnter="cardDragEnterHandler(event);" dragDrop="cardDragDropHandler(event, 3);" dragExit="cardDragExitHandler(event);" label="Deck">
+        </mx:Canvas>
+        <mx:Canvas id="myCanvas4" backgroundColor="#FFFFFF" borderStyle="solid" backgroundImage=""
+        width="175" height="245" 
+        dragEnter="cardDragEnterHandler(event);" dragDrop="cardDragDropHandler(event, 4);" dragExit="cardDragExitHandler(event);" label="Deck">
+        </mx:Canvas> -->
+    </mx:Panel>
+    <mx:Panel x="808" y="10" width="206" height="128" layout="absolute" toolTip="Play Field Actions" title="Play Field Actions">
+        <mx:Button label="[{corpCardsLeft}]Draw Corp Card" id="corpButton" click="makeCorpCard();" fontWeight="normal" y="10" x="10"  width="176"/>
+        <mx:Button label="[{runnerCardsLeft}]Draw Runner Card" id="runnerButton" click="makeRunnerCard();" fontWeight="normal" y="40" x="10"  width="176"/>
+        <mx:Button label="Token" click="makeToken();" fontWeight="normal" y="70" x="10"  width="176"/>
+    </mx:Panel>
+    <mx:Panel x="807" y="146" width="207" height="188" layout="absolute" title="Debug Status">
+    	<mx:TextArea height="100%" width="100%" text="{debugText}" editable="false" verticalScrollPosition="{debugLines+10}" backgroundColor="#000000" color="#17ed1e" verticalScrollPolicy="off" horizontalScrollPolicy="off"></mx:TextArea>
+    </mx:Panel>
+    <mx:Panel width="207" height="89" layout="absolute" x="807" y="342" title="Token Removal" dragEnter="removeTokenDragEnter(event);" dragExit="removeTokenDragExit(event);" dragDrop="removeTokenDragDrop(event);">
+        <mx:toolTip>Drag Tokens here to remove them from the play area.</mx:toolTip>
+    </mx:Panel>
+    <mx:Panel x="807" y="439" width="207" height="163" layout="absolute" title="Hand Controls">
+        <mx:Button x="10" y="10" label="Shuffle" width="177" click="shuffleHand();"/>
+        <mx:Button x="10" y="40" label="Face Down" width="177" id="faceDownButton"/>
+        <mx:Button x="10" y="70" label="Face Up" width="177" id="faceUpButton"/>
+        <mx:Button x="10" y="100" label="Fan Out" width="177" id="fanButton"/>
+    </mx:Panel>
+    
+</mx:Canvas>

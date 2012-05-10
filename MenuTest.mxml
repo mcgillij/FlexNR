@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+    <mx:Application xmlns:mx="http://www.adobe.com/2006/mxml">
+    
+        <mx:XML format="e4x" id="myMenu">
+            <root label="Menu">
+            <menuitem label="Create a Deck">
+                <menuitem label="Runner"/>
+                <menuitem label="Corp" />
+            </menuitem>
+            <menuitem label="Save Deck"/>
+            <menuitem type="separator"/>
+            <menuitem label="Quit"/>
+               
+           
+            </root>
+        </mx:XML>
+        <mx:MenuBar id="myNRMenu" labelField="@label" showRoot="true">
+            <mx:dataProvider>
+                {myMenu}
+            </mx:dataProvider>
+        </mx:MenuBar>
+    
+    </mx:Application>

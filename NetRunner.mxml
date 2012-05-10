@@ -1,0 +1,201 @@
+<?xml version="1.0"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute">
+
+    <mx:Script>
+    <![CDATA[
+    	import flash.ui.Mouse;
+        import mx.core.*;
+        import mx.managers.*;
+        import mx.graphics.*;
+        import mx.utils.*
+        import mx.events.*;
+        import mx.controls.*;
+        import mx.controls.Image;
+		import mx.containers.*
+		import mx.collections.*;
+		import mx.effects.*;
+		import mx.formatters.*;
+		import mx.messaging.*;
+		import mx.skins.*;
+		import mx.styles.*;
+		import mx.states.*;
+		import mx.validators.*;
+		
+		
+		[Embed("images/bit.jpg")]
+        [Bindable]
+        public var OneBit:Class;
+		
+		public var myImage:Image = new Image;
+	//	myImage.source = "images/bit.jpg";
+		
+		public function createBit():void {
+			//bitCanvas.addChild(bitPic);
+		}
+		
+		
+		public var mouseXold:Number = 0;
+		public var mouseYold:Number = 0;
+		public var mouseXnew:Number = 0;
+		public var mouseYnew:Number = 0;
+		
+		private function setCoordsDown():void {
+				
+			mouseXold = mouseX.valueOf();
+			mouseYold = mouseY.valueOf();
+			
+		}
+		
+		private function setCoordsUp():void {
+				
+			mouseXnew = mouseX.valueOf();
+			mouseYnew = mouseY.valueOf();
+			
+		}
+		
+		
+		private function moveImage():void {
+                myMove.end();
+                myMove.xFrom=mouseXold;
+                myMove.yFrom=mouseYold;
+        //        myMove.captureStartValues();
+        		myMove.xTo=mouseXnew;
+                myMove.yTo=mouseYnew; 
+                myMove.play();
+            }
+		
+		
+		
+		//[Bindable]
+		//public var totalBits:int = 0;
+		/*
+		private function subBits(bits:int):void {
+			totalBits = totalBits - bits;
+		//	return totalBits;
+		}
+		
+		private function addBits(bits:int):void {
+			totalBits = totalBits + bits;
+		//	return totalBits;
+		}
+		
+		private function updateSelectedBits(bits:int):void {
+		//	var newbits:String = bits.toString();
+		//	Alert.show(newbits);
+			
+			if (bits > 0) {
+		//		Alert.show("Adding bits");
+				addBits(bits);
+			} else {
+		//		Alert.show("Substracting bits");
+				subBits(bits);
+			}
+			
+			//var textBit:String = totalBits.toString();
+			//bitpool.text = textBit;
+			
+		//	return totalBits;	
+					
+		}
+		*/
+		
+        // Called when the user clicks the mouse on either colored canvas.
+        // Initializes the drag.
+        private function dragIt(event:MouseEvent, text:String, format:String):void {
+            // Get the drag initiator component from the event object.
+            var dragInitiator:Canvas=Canvas(event.currentTarget);
+            // Create a DragSource object.
+            var ds:DragSource = new DragSource();
+            // Add the data to the object.
+            ds.addData(text, format);
+
+            // Create a Canvas container to use as the drag proxy.
+            // You must specify a size for the proxy image, 
+            // or else it will not appear.
+            
+            
+            var canvasProxy:Canvas = new Canvas();
+            canvasProxy.width=190;
+            canvasProxy.height=220;
+            canvasProxy.scaleX;
+            canvasProxy.scaleY;
+            canvasProxy.setStyle('backgroundImage', dragInitiator.getStyle('backgroundImage'));
+
+            // Call the DragManager doDrag() method to start the drag. 
+            // For information on this method, see 
+            // the "Initiating the drag" section.
+            DragManager.doDrag(dragInitiator, ds, event, canvasProxy);
+        }
+
+        // Called if the user dragged a proxy onto the drop target canvas.
+        private function doDragEnter(event:DragEvent):void {
+            // Get the drop target component from the event object.
+            var dropTarget:Canvas=Canvas(event.currentTarget);
+
+            // Accept the drag only if the user is dragging data 
+            // identified by the 'color' format value.
+            if (event.dragSource.hasFormat('image')) {
+                DragManager.acceptDragDrop(dropTarget);
+            }
+        }
+                
+        // Called if the target accepts the dragged object and the user 
+        // releases the mouse button while over the canvas. 
+        // Handles the dragDrop event for the List control.
+        private function doDragDrop(event:DragEvent):void {
+            // Get the data identified by the color format from the drag source.
+            var data:Object = event.dragSource.dataForFormat('image');
+            // Set the canvas color.
+            myCanvas.setStyle("backgroundImage", data);
+        }
+    
+    ]]>
+    </mx:Script>
+    
+    <mx:Move id="myMove" target="{img}"/>
+    
+    <mx:Canvas width="100%" height="100%">
+       <mx:HBox width="100%" height="33%">
+            <mx:Canvas backgroundColor="green" borderStyle="solid" width="172" backgroundImage="@Embed('images/clown.gif')"
+                height="239" mouseMove="dragIt(event, 'images/clown.gif', 'image');">
+            </mx:Canvas>
+            <mx:Canvas backgroundColor="blue" borderStyle="solid" width="171" backgroundImage="@Embed('images/on-call_solo_team.gif')"
+                height="236" mouseMove="dragIt(event, 'images/on-call_solo_team.gif', 'image');">
+            </mx:Canvas>
+            <mx:Panel title="Move Effect Example" width="95%" height="95%" 
+        paddingTop="5" paddingLeft="10" paddingRight="10" paddingBottom="5">
+
+       <mx:Text width="100%" color="blue" 
+           text="Click anywhere on the canvas to move the phone horizontally to that position"/>
+
+        <mx:Canvas id="canvas" width="100%" height="100%" >
+
+            <mx:Image id="img" source="@Embed(source='images/5bit.png')"/>
+
+        </mx:Canvas>
+    
+    </mx:Panel>
+        </mx:HBox>
+        
+   
+    <!-- A horizontal box with red and green canvases the user can drag -->
+    <!-- Handles dragEnter and dragDrop events to allow dropping -->
+
+    <mx:HBox width="100%" height="33%" y="250">
+        <mx:Canvas id="myCanvas" backgroundColor="#FFFFFF" borderStyle="solid" backgroundImage=""
+            width="178" height="224" 
+            dragEnter="doDragEnter(event);" dragDrop="doDragDrop(event);" label="Deck">
+            </mx:Canvas>
+        <mx:Label text="Drag a card into your deck"/>
+    </mx:HBox>
+    <mx:VBox width="100%" height="10%" verticalAlign="bottom" y="500">
+    <mx:Canvas id="bitCanvas" width="100%" height="100%">
+    	
+    
+    	<mx:Label text="Bit Pool"/>
+    	<mx:NumericStepper id="bitpool" value="0" stepSize="1" enabled="true"/>
+    	<mx:Image source="{OneBit}" autoLoad="true" id="bitImage"/>  	
+    </mx:Canvas>
+    </mx:VBox>
+    </mx:Canvas>
+</mx:Application>

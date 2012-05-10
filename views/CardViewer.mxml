@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"  creationComplete="onCreationComplete()" styleName="appCanvas">
+	
+	<mx:HTTPService 
+        id="loadCardlist"
+        url="cardlist.xml" 
+        resultFormat="e4x"
+        result="xmlResultHandler(event);"
+        fault="xmlFaultHandler(event);" />
+	  
+	<mx:Script>
+	
+		<![CDATA[
+			// Imports
+            import mx.controls.Alert;
+            import mx.rpc.events.FaultEvent;
+            import mx.rpc.events.ResultEvent;
+            import com.Card;
+            import com.Deck;
+            import com.cairngorm.model.NRModelLocator;
+            
+			/*   HERE */              
+            // Vars
+            [Bindable]
+            private var cardList:XML = new XML;
+            
+			[Bindable]
+			private var cardImageStr:String;
+			
+			[Bindable] 
+			private var selectedList:XML;
+										
+			[Bindable]
+			private var currentDeck:Deck;
+					
+			
+			/* Start of the functions */
+			
+			private function onCreationComplete():void
+			{
+				loadCardlist.send();						
+				currentDeck = NRModelLocator.getInstance().runnerDeck;
+			}
+			
+			// Called by the HTTPService call in the creationComplete of the application
+		 	private function xmlFaultHandler(event:FaultEvent):void {
+                Alert.show(event.fault.message, "Could not load card list!");
+            }
+            
+            private function xmlResultHandler(event:ResultEvent):void {
+                cardList = event.result as XML;
+                selectedList = cardList;
+                filterCardList(rbg_cardType.selectedValue as String,rbg_cardRelease.selectedValue as String);
+            } 
+			
+			// Resets the output of the sorted text box
+			public function reset():void {
+				if (currentDeck.type == Deck.RUNNER) {
+					rbg_cardType.selectedValue="Hardware";
+				}
+				else {
+					rbg_cardType.selectedValue="Upgrade";
+				}
+				rbg_cardRelease.selectedValue="Limited";
+				filterCardList(rbg_cardType.selectedValue as String,rbg_cardRelease.selectedValue as String);
+				
+			}
+			
+			//This is called by the redimentary sorting stuff at the top.
+			public function filterCardList(cardType:String, cardRelease:String):void {
+				selectedList = <cardlist><card></card></cardlist>;
+				selectedList.card = cardList.card.(type == cardType && release == cardRelease);
+			}	
+
+			
+			// This happens when the user clicks on the item in the DG
+			public function setCardImage():void {
+				var tempImageStr:String;
+				tempImageStr = cardList.card.(name == cardDG.selectedItem.name).image.toString();
+				// instead of setting the card image to blank, we should use a template image till we get all the 
+				// card images either by scanning them or by ripping them out of the MWS package.
+				if (tempImageStr == "") {
+					cardImageStr = "";
+				} else {
+					cardImageStr = cardList.card.(name == cardDG.selectedItem.name).image.toString();
+				}
+			}	
+			
+			private function addCard( ):void
+			{
+				if (!cardDG.selectedItem) {
+					Alert.show("You must select a card first!");
+					return;
+				}
+				if (currentDeck.type == Deck.RUNNER) {
+					NRModelLocator.getInstance().runnerDeck.addCard(new Card().loadFromCardList(cardDG.selectedItem.name,cardList));
+					currentDeck = NRModelLocator.getInstance().runnerDeck;
+				}
+				else {
+					NRModelLocator.getInstance().corpDeck.addCard(new Card().loadFromCardList(cardDG.selectedItem.name,cardList));
+					currentDeck = NRModelLocator.getInstance().corpDeck;
+				}
+			}
+			
+			private function exportDeck():void
+			{
+				//Alert.show(myDeck.toXML().toString());
+				txt_export.text = currentDeck.toXML(true).toString();
+			}
+			
+			private function setDeckType():void
+			{
+				if (cbx_deckType.selectedItem == Deck.RUNNER) {
+					currentDeck = NRModelLocator.getInstance().runnerDeck;
+					/*   HERE */					
+					reset();
+				}
+				else {
+					currentDeck = NRModelLocator.getInstance().corpDeck;
+					
+					/*   HERE */
+					reset();
+				}
+			}
+			
+			private function removeCard():void
+			{
+				var index:uint = dg_deck.selectedIndex;
+				if (!dg_deck.selectedItem) {
+					Alert.show("You must select a card from the deck first!");
+					return;
+				}
+				
+				if (currentDeck.type == Deck.RUNNER) {
+					if (!NRModelLocator.getInstance().runnerDeck.findCard(dg_deck.selectedItem.name,true)) {
+						Alert.show("Could not remove card!");
+					}
+				}
+				else {
+					if (!NRModelLocator.getInstance().corpDeck.findCard(dg_deck.selectedItem.name,true)) {
+						Alert.show("Could not remove card!");
+					}
+				}
+				dg_deck.selectedIndex = (index-1);
+				if (dg_deck.selectedItem) {
+					cardImageStr = cardList.card.(name == dg_deck.selectedItem.name).image.toString();				
+				}
+
+			}
+			
+			private function selectCardFromDeck():void
+			{
+				cardDG.selectedItem=null;
+				if (dg_deck.selectedItem) {
+					cardImageStr = cardList.card.(name == dg_deck.selectedItem.name).image.toString();				
+				}
+				
+			}
+		
+		]]>
+	</mx:Script>
+<mx:Panel title="Runner Card Types" height="154" x="10" y="63" width="200" visible="{cbx_deckType.selectedItem == Deck.RUNNER}">
+	<mx:RadioButtonGroup id="rbg_cardType" change="filterCardList(rbg_cardType.selectedValue as String,rbg_cardRelease.selectedValue as String);"/>
+	<mx:RadioButton x="49.0" y="10.0" label="Hardware" groupName="rbg_cardType" value="Hardware" selected="true"/>
+	<mx:RadioButton x="49.0" y="34.0" label="Program" groupName="rbg_cardType" value="Program"/>
+	<mx:RadioButton x="49.0" y="58.0" label="Resource" groupName="rbg_cardType" value="Resource"/>
+	<mx:RadioButton x="49.0" y="82.0" label="Prep" groupName="rbg_cardType" value="Prep"/>	
+</mx:Panel>	
+<mx:Panel title="Corp Card Type" height="154" x="10" y="63" width="200" visible="{cbx_deckType.selectedItem == Deck.CORPORATION}">
+	<mx:RadioButton label="Upgrade" groupName="rbg_cardType" value="Upgrade"/>
+	<mx:RadioButton label="Node" groupName="rbg_cardType" value="Node"/>
+	<mx:RadioButton label="Ice" groupName="rbg_cardType" value="Ice"/>
+	<mx:RadioButton label="Agenda" groupName="rbg_cardType" value="Agenda"/>
+	<mx:RadioButton label="Operation" groupName="rbg_cardType" value="Operation"/>
+</mx:Panel>
+
+<mx:Panel x="218" y="63" width="121" height="154" layout="absolute" title="Card Release Set">
+	<mx:RadioButtonGroup id="rbg_cardRelease" change="filterCardList(rbg_cardType.selectedValue as String,rbg_cardRelease.selectedValue as String);" />
+	<mx:RadioButton x="0.0" y="0.0" label="Limited" groupName="rbg_cardRelease" value="Limited" selected="true"/>
+	<mx:RadioButton x="0.0" y="24.0" label="Proteus" groupName="rbg_cardRelease" value="Proteus"/>
+</mx:Panel>
+	<mx:DataGrid id="cardDG" dataProvider="{selectedList.card}" width="300" height="475" x="10" y="255"
+		resizableColumns="true" variableRowHeight="true" wordWrap="true" 
+		change="setCardImage()" click="{dg_deck.selectedItem=null}">
+          <mx:columns>
+            <mx:DataGridColumn dataField="name" headerText="Name" width="200"/>
+            <mx:DataGridColumn dataField="type" headerText="Type" width="100"/>
+      		<!-- mx:DataGridColumn dataField="subtype1" headerText="Sub Type 1"/ -->
+            <!-- mx:DataGridColumn dataField="subtype2" headerText="Sub Type 2"/ -->
+            <!-- mx:DataGridColumn dataField="artist" headerText="Artist"/ -->
+            <!-- mx:DataGridColumn dataField="install_cost" headerText="Install" width="60"/ -->
+            <!-- mx:DataGridColumn dataField="rez_cost" headerText="Rez" width="40"/ -->
+         	<!-- mx:DataGridColumn dataField="rarity" headerText="Rarity"/ -->
+            <!-- mx:DataGridColumn dataField="text" headerText="Text"/ -->
+            <!-- mx:DataGridColumn dataField="quote" headerText="Quote"/ -->
+            <mx:DataGridColumn dataField="release" headerText="Release" width="100"/>            
+         </mx:columns>
+    </mx:DataGrid>
+	<mx:Panel x="318" y="255" width="310" height="445" layout="absolute" title="Card Image">
+		<mx:Image id="cardImage" x="0" y="0" width="100%" height="100%" source="{cardImageStr}" />
+	</mx:Panel>
+	<mx:DataGrid x="636" y="255" height="475" dataProvider="{currentDeck.deck}" width="282" id="dg_deck" click="selectCardFromDeck()">
+		<mx:columns>
+			<mx:DataGridColumn headerText="Deck" dataField="name"/>
+		</mx:columns>
+	</mx:DataGrid>
+	<mx:Button x="560" y="708" label="Add &gt;&gt;" click="addCard()" width="68"/>
+	<mx:Button x="867" y="225" label="Export" click="exportDeck()"/>
+	<mx:TextArea x="636" y="10" height="207" id="txt_export"  width="282"/>
+	<mx:Panel x="10" y="10" width="179" height="45" layout="absolute" title="Deck Type">
+		<mx:ComboBox width="100%" id="cbx_deckType" change="setDeckType()">
+			<mx:dataProvider>
+				<mx:Array>
+					<mx:String>Runner</mx:String>
+					<mx:String>Corporation</mx:String>
+				</mx:Array>
+			</mx:dataProvider>
+		</mx:ComboBox>
+	</mx:Panel>
+	<mx:Button x="10" y="225" label="Reset" click="reset()" />
+	<mx:Button x="318" y="708" label="&lt;&lt; Remove" click="removeCard()"/>
+
+	
+</mx:Canvas>

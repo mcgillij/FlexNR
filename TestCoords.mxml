@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<!-- dragdrop\DandDImageProxy.mxml -->
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml">
+
+    <mx:Script>
+        <![CDATA[
+            //Import classes so you don't have to use full names.
+            import mx.managers.DragManager;
+            import mx.core.DragSource;
+            import mx.events.DragEvent;
+            import flash.events.MouseEvent;
+            import mx.controls.Image;
+            import mx.containers.Canvas;
+
+            //Variables used to hold the image's location
+            public var xOff:Number;
+            public var yOff:Number;
+
+            // Embed icon image.
+            [Embed(source='images/runner_back.jpg')]
+            public var globeImage:Class;
+
+            // Drag initiator event handler, called by 
+            //  the image's mouseMove event.
+            private function dragMe(event:MouseEvent, img1:Image, format:String):void {
+                var dragInitiator:Image=Image(event.currentTarget);
+                var ds:DragSource = new DragSource();
+                ds.addData(img1, format);               
+                // The drag manager uses the image as the drag proxy
+                // and sets the alpha to 100 (opaque),
+                // so it appears to be dragged across the canvas.
+                var imageProxy:Image = new Image();
+                imageProxy.source = globeImage;
+                imageProxy.height=240;
+                imageProxy.width=170;
+                DragManager.doDrag(dragInitiator, ds, event, imageProxy, 0, 0, 1.00);
+            }
+            
+            //Function called by the canvas dragEnter event; enables dropping
+            private function doDragEnter(event:DragEvent):void {
+                DragManager.acceptDragDrop(Canvas(event.target));
+            }
+
+            // Function called by the canvas dragDrop event; 
+            // Sets the image object's position, 
+            // "dropping" it in its new location.
+            private function doDragDrop(event:DragEvent, target1:Canvas, format:String):void {
+                myimg.x = target1.mouseX - xOff
+                myimg.y = target1.mouseY - yOff 
+            }
+
+            // Helper function called by the dragged image's mouseMove event,
+            // as the image drags across the canvas.
+            // The function updates the xOff and yOff variables to show the
+            // current mouse location.  
+            private function myoffset(img:Image):void {
+                xOff = img.mouseX
+                yOff = img.mouseY
+            }       
+        ]]>
+    </mx:Script>
+    
+    <!-- The Canvas is the drag target --> 
+    <mx:Canvas id="v1" 
+        width="500" height="500"  
+        borderStyle="solid" 
+        backgroundColor="#DDDDDD"
+        dragEnter="doDragEnter(event);" 
+        dragDrop="doDragDrop(event, v1, 'img');">
+        
+    <!-- The image is the drag initiator and the drag proxy. -->
+        <mx:Image id="myimg" 
+            source="@Embed(source='images/runner_back.jpg')" 
+            mouseMove="dragMe(event, myimg, 'img'); myoffset(myimg);"/> 
+    </mx:Canvas>
+</mx:Application>

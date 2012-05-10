@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" creationComplete="init();">
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Text;
+            import mx.events.DragEvent;
+            import mx.containers.Box;
+            import mx.containers.Canvas;
+            import mx.managers.DragManager;
+            import mx.core.DragSource;
+            import flash.events.MouseEvent;
+            import com.BlueToken;
+            import com.Card;
+            import com.Deck;
+            import mx.controls.Alert;
+            import mx.core.BitmapAsset;
+            import mx.core.UIComponent;
+            import mx.effects.Rotate;
+            
+            
+            [Embed("images/runner_back.jpg")]
+            [Bindable]
+            public var RunnerCardBack:Class;
+            
+            [Embed("images/corp_back.jpg")]
+            [Bindable]
+            public var CorpCardBack:Class;
+            
+            // Offset for cards
+   	    	public var cardXOff:Number;
+   	    	public var cardYOff:Number;
+         	
+         	
+         	[Bindable]
+         	public var runnerCardsLeft:Number;
+         	[Bindable]
+         	public var corpCardsLeft:Number;
+         	
+         	
+         	internal static var debugMode:Boolean = true;
+         	// Debug stuff
+         	[Bindable]
+         	public var debugText:String;
+         	[Bindable]
+         	public var debugLines:Number = 0;
+         	
+         	public var myCorpDeck:Deck = new Deck("Corp");
+         	public var myRunnerDeck:Deck = new Deck("Runner");
+         	
+         	// Create the hand deck
+         	public var myHandDeck:Deck = new Deck("Hand");
+         	
+			public var currentCard:Card = new Card;
+			
+			public function doDebug(text:String):void {
+				
+				if(debugMode == true){
+				
+				debugText = debugText + "\n" + text;
+				debugLines++;
+				}
+			}
+			
+			public function init():void {
+				doDebug("Initializing Decks");
+				doDebug("Initiating Corp Deck");
+				myCorpDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "corp"));
+				myCorpDeck.addCard(new Card("Clown", "Program", "images/clown.jpg", "corp"));
+				myCorpDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "corp"));
+				myCorpDeck.addCard(new Card("Clown", "Program", "images/clown.jpg", "corp"));
+				myCorpDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "corp"));
+				myCorpDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "corp"));
+			//	trace (myCorpDeck);
+				doDebug("Shuffling Corp Deck");
+				myCorpDeck.shuffle();
+				doDebug("Done Shuffling Corp Deck");
+			//	trace (myCorpDeck);
+	
+				doDebug("Initializing Runner Deck");
+				myRunnerDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "runner"));
+				myRunnerDeck.addCard(new Card("Clown", "Program", "images/clown.jpg", "runner"));
+				myRunnerDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "runner"));
+				myRunnerDeck.addCard(new Card("Clown", "Program", "images/clown.jpg", "runner"));
+				myRunnerDeck.addCard(new Card("On-call Solo Team", "Agenda", "images/on-call_solo_team.gif", "runner"));
+		
+			//	trace (myRunnerDeck);
+				doDebug("Shuffling Runner Deck");
+				myRunnerDeck.shuffle();
+				doDebug("Done Shuffling Runner Deck");
+			//	trace (myRunnerDeck);
+				
+				doDebug("Counting cards in each Deck");
+				corpCardsLeft = myCorpDeck.deck.length;
+				runnerCardsLeft = myRunnerDeck.deck.length;
+		
+				// need to add the event listener to the button		
+				fan.addEventListener(MouseEvent.CLICK, doFan);
+				
+				
+			}
+			
+			// this is the trigger to the fanning the cards
+			public function doFan(event:MouseEvent):void {
+			
+				var angleStepper:Number = 90/myHandDeck.deck.length;
+				var angle:Number = -90;
+				
+								
+				for each (var card:Card in myHandDeck.deck) {
+					
+					card.fanCards(event, angle);
+					
+					angle = angle + angleStepper;
+				}
+				
+			}
+			
+			public function cardOffSet(event:MouseEvent):void {
+           	//	doDebug("Triggered Card Offset");
+           		
+           		cardXOff = event.localX;
+           		cardYOff = event.localY;
+           	}        
+           	
+           	public function makeCorpCard():void {
+            	
+            	var myCard:Card = currentCard = myCorpDeck.draw();
+            	myCard.addEventListener(MouseEvent.MOUSE_MOVE, cardOffSet);
+            	corpCardsLeft = myCorpDeck.deck.length;
+              	base.addChild(myCard);
+              	doDebug("Drawing Corp Card");
+            }
+           
+            public function makeRunnerCard():void {
+            	
+            	var myCard:Card = currentCard = myRunnerDeck.draw();
+            	myCard.addEventListener(MouseEvent.MOUSE_MOVE, cardOffSet);
+            	// Setting the cards to around the middle of the canvas
+            	
+            	myCard.x = 300;
+            	myCard.y = 200;
+                myHandDeck.addCard(myCard);
+            	
+           	    runnerCardsLeft = myRunnerDeck.deck.length;
+               	base.addChild(myCard);
+               	doDebug("Drawing Runner Card");
+           } 
+ 
+ 
+ 			private function baseDoDragDrop(event:DragEvent):void 
+            {	
+            	 if (event.dragSource.hasFormat('cardType')) {
+            	 	
+            	 	event.dragInitiator.x = event.currentTarget.mouseX - cardXOff;
+					event.dragInitiator.y = event.currentTarget.mouseY - cardYOff;
+					base.setChildIndex(Card(event.dragInitiator), base.numChildren-1);
+            	} else {
+       		  //  	event.dragInitiator.x = event.currentTarget.mouseX - xOff;
+				//	event.dragInitiator.y = event.currentTarget.mouseY - yOff;
+				//	base.setChildIndex(BlueToken(event.dragInitiator), base.numChildren-1);
+		     	}
+			}
+			
+			private function cardDragEnterHandler(event:DragEvent):void 
+            {
+            	// Get the drop target component from the event object.
+          	  	var dropTarget:Canvas=Canvas(event.currentTarget);
+
+				// Accept the drag only if the user is dragging data 
+       		    // identified by the 'cardType' format value.
+       		    if (event.dragSource.hasFormat('cardType')) {
+                DragManager.acceptDragDrop(dropTarget);
+            	}
+                   
+            }
+            
+            private function cardDragExitHandler(event:DragEvent):void
+            {
+
+                // Get the drop target component from the event object.
+                var dropTarget:Card=event.currentTarget as Card;                
+                             
+            }   
+        
+            private function tokenDoDragEnter(event:DragEvent):void 
+            {
+            	if(event.dragSource.dataForFormat('format') == "bit") {
+            			doDebug("Cannot drop Bit here");
+            		 } else {
+               			DragManager.acceptDragDrop(Canvas(event.target));
+                //		doDebug("Bit Dropped");
+         		    }
+            }
+			
+			
+			
+			
+		]]>
+	</mx:Script>
+	<mx:Canvas id="base" 
+	        width="717" height="489"  
+	        dragEnter="tokenDoDragEnter(event);" 
+	        dragDrop="baseDoDragDrop(event); " borderStyle="none" cornerRadius="0" backgroundColor="gray" x="0" y="0">
+		
+		
+		
+	</mx:Canvas>
+	<mx:Panel x="10" y="497" width="206" height="140" layout="absolute" toolTip="Play Field Actions" title="Play Field Actions">
+	    <mx:Button label="[{corpCardsLeft}]Draw Corp Card" click="makeCorpCard();" fontWeight="normal" y="10" x="10"  width="176"/>
+	    <mx:Button label="[{runnerCardsLeft}]Draw Runner Card" click="makeRunnerCard();" fontWeight="normal" y="40" x="10"  width="176"/>
+		<mx:Button id="fan" label="fan cards" x="10" y="70"/>
+			
+	</mx:Panel>
+	
+</mx:Application>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" creationComplete="onCreationComplete()">
+	<mx:Script>
+		<![CDATA[
+			import com.Deck;
+			import com.Card;
+			public var myDeck:Deck = new Deck("Runner");
+			public var currentCard:Card = new Card;
+			
+			public function onCreationComplete():void {				
+				myDeck.addCard(new Card("Bartmos Memorial Icebreaker","Program"));	
+				myDeck.addCard(new Card("Shredder Uplink Protocol", "Program"));
+				myDeck.addCard(new Card("The Deck", "Hardware"));
+				myDeck.addCard(new Card("Broker", "Resource"));
+				myDeck.addCard(new Card("Expendable Family Member", "Hidden Resource"));
+				trace (myDeck);
+				myDeck.shuffle();
+				trace (myDeck);
+				currentCard = myDeck.draw();
+				trace (myDeck);
+				myDeck.putOnTop(new Card("Piledriver", "Program"));
+				trace (myDeck);
+			}	
+		]]>
+	</mx:Script>
+</mx:Application>

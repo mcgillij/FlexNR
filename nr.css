@@ -1,0 +1,73 @@
+/* CSS file */
+ 
+@font-face {
+ src:url("fonts/NICOTINE.TTF"); 
+ fontFamily: "Nicotine";
+ fontWeight: normal;
+} 
+Application {
+   backgroundColor: #33ff00;
+   backgroundGradientColors: #000000, #666666;
+   backgroundGradientAlphas: 0.86, 0.9;
+   fontFamily: Nicotine;
+    
+}
+
+.appCanvas {
+   backgroundColor: #333333;
+   fontFamily: Nicotine;
+}
+
+RadioButton {
+   fillColors: #006600, #ff0000, #ffffff, #eeeeee;
+   
+}
+Canvas {
+   backgroundColor: #d0d0d0;
+   dropShadowEnabled: true;
+   shadowDistance: 8;
+   shadowDirection: right;
+   dropShadowColor: #333333;
+}
+
+ApplicationControlBar {
+   highlightAlphas: 0.36, 0.04;
+   fillAlphas: 0.5, 0.68;
+   fillColors: #000000, #33ff00;
+   cornerRadius: 15;
+   dropShadowEnabled: true;
+   shadowDirection: right;
+}
+
+Panel {
+   borderColor: #00ff00;
+   borderAlpha: 0.19;
+   borderThicknessLeft: 5;
+   borderThicknessTop: 0;
+   borderThicknessBottom: 6;
+   borderThicknessRight: 5;
+   cornerRadius: 7;
+   headerHeight: 17;
+   backgroundAlpha: 0.53;
+   highlightAlphas: 0.56, 0.21;
+   headerColors: #003366, #d9d9d9;
+   footerColors: #000066, #c7c7c7;
+   backgroundColor: #ffffff;
+   titleStyleName: "mypanelTitle";
+}
+
+.mypanelTitle {
+   letterSpacing: 4;
+   color: #17ed1e;
+   textAlign: right;
+}
+
+Button {
+   cornerRadius: 0;
+   paddingLeft: 0;
+   paddingRight: 0;
+   highlightAlphas: 0.61, 0.18;
+   fillAlphas: 0.63, 0.33, 0.48, 0.31;
+   fillColors: #009900, #00ff00, #ffffff, #eeeeee;
+   borderColor: #003300;
+}
